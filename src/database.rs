@@ -1,34 +1,48 @@
+use super::graphql::queries::{FlowerDesc, Flowers};
 use futures::Future;
-use my::{OptsBuilder};
+use mysql::prelude::*;
+use mysql::OptsBuilder;
 
-#[derive(Debug, PartialEq, Eq, Clone)]
-struct Payment {
-  customer_id: i32,
-  amount: i32,
-  account_name: Option<String>,
+pub struct Database {
+  pool: mysql::Pool,
 }
 
-/// Same as `tokio::run`, but will panic if future panics and will return the result
-/// of future execution.
-pub fn run<F, T, U>(future: F) -> Result<T, U>
-where
-  F: Future<Item = T, Error = U> + Send + 'static,
-  T: Send + 'static,
-  U: Send + 'static,
-{
-  let mut runtime = tokio::runtime::Runtime::new().unwrap();
-  let result = runtime.block_on(future);
-  runtime.shutdown_on_idle().wait().unwrap();
-  result
+impl Database {
+  pub fn new() -> Database {
+    let mut database = OptsBuilder::new();
+    database
+      .user(Some("greefine"))
+      .pass(Some("password"))
+      .db_name(Some("Flowers"));
+    Database {
+      pool: mysql::Pool::new(database).unwrap(),
+    }
+  }
+
+  pub fn get_flowers(&self, limit: i32) -> Flowers {
+    let flower_desc: Vec<FlowerDesc> = self
+      .pool
+      .prep_exec(
+        "SELECT nom_avec_auteur, genre FROM descriptions LIMIT :limit;",
+        params! {
+            "limit" => limit,
+        },
+      )
+      .map(|result| {
+        result
+          .map(|x| x.unwrap())
+          .map(|row| {
+            let (id, name) = mysql::from_row(row);
+            FlowerDesc { id: id, name: name }
+          })
+          .collect() // Collect payments so now `QueryResult` is mapped to `Vec<Payment>`
+      })
+      .unwrap(); // Unwrap `Vec<Payment>`
+
+
+    Flowers {
+      descrptions: flower_desc,
+    }
+  }
 }
 
-pub fn start() -> my::Pool {
-  let mut database = OptsBuilder::new();
-  database
-    .user(Some("greefine"))
-    .pass(Some("password"))
-    .db_name(Some("Flowers"));
-
-
-  my::Pool::new(database)
-}

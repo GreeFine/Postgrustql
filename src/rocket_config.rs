@@ -1,4 +1,6 @@
-use super::graphql::schema::{Context, Mutation, Query, Schema};
+use super::graphql::schema::{Context, Query, Schema};
+use juniper::EmptyMutation;
+
 use rocket::response::content;
 use rocket::State;
 
@@ -26,9 +28,10 @@ fn post_graphql_handler(
 }
 
 pub fn run() {
+    Query::init();
     rocket::ignite()
-        .manage(Context {})
-        .manage(Schema::new(Query, Mutation))
+        .manage(Context::new())
+        .manage(Schema::new(Query, EmptyMutation::<Context>::new()))
         .mount(
             "/",
             routes![graphiql, get_graphql_handler, post_graphql_handler],

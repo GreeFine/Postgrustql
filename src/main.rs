@@ -5,10 +5,12 @@ extern crate juniper_rocket;
 extern crate rocket;
 extern crate futures;
 #[macro_use]
-extern crate mysql_async as my;
+extern crate mysql;
 extern crate tokio;
+#[macro_use]
+extern crate lazy_static;
 
-mod database;
+pub mod database;
 mod graphql;
 mod rocket_config;
 
