@@ -1,4 +1,4 @@
-use super::graphql_config::{Context, Mutation, Query, Schema};
+use super::graphql::schema::{Context, Mutation, Query, Schema};
 use rocket::response::content;
 use rocket::State;
 

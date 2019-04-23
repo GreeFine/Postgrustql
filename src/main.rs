@@ -9,10 +9,9 @@ extern crate mysql_async as my;
 extern crate tokio;
 
 mod database;
-mod graphql_config;
+mod graphql;
 mod rocket_config;
 
 fn main() {
-    database::start();
-    // rocket_config::run();
+    rocket_config::run();
 }
