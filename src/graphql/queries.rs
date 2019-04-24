@@ -15,14 +15,6 @@ pub struct FlowerDesc {
   pub name: String,
 }
 
-// #[derive(juniper::GraphQLInputObject)]
-// #[graphql(description = "A humanoid creature in the Star Wars universe")]
-// pub struct NewHuman {
-//   name: String,
-//   appears_in: Vec<Episode>,
-//   home_planet: String,
-// }
-
 impl Query {
   pub fn init() {
     juniper::graphql_object!(Query: Context |&self| {
