@@ -1,4 +1,4 @@
-use super::graphql::queries::{FlowerDesc, Flowers};
+use super::graphql::types::Connection_trait;
 use juniper::GraphQLType;
 use mysql::prelude::*;
 use mysql::OptsBuilder;
@@ -7,16 +7,9 @@ pub struct Database {
   pool: mysql::Pool,
 }
 
-pub trait requestable_data {
-  fn new() -> Self;
-  fn feed(&mut self, row: &mut mysql::Row) -> &mut Self {
-    panic!("not implem!")
-  }
-  fn create(row: &mut mysql::Row) -> Self;
-}
 
 #[derive(AsRefStr)]
-pub enum e_tables {
+pub enum ETables {
   pictures,
   descriptions,
 }
@@ -34,9 +27,9 @@ impl Database {
     }
   }
 
-  pub fn request<T>(&self, fields: Vec<&str>, table: e_tables, limit: Option<u32>) -> T
+  pub fn request<T>(&self, fields: Vec<&str>, table: ETables, limit: Option<i32>) -> T
   where
-    T: requestable_data,
+    T: Connection_trait,
     T: GraphQLType,
   {
     let mut request = String::new();
@@ -57,36 +50,10 @@ impl Database {
       .map(|result| result.map(|x| x.unwrap()))
       .unwrap();
     for mut row in rows {
-      requestable_data::feed(&mut data, &mut row);
+      Connection_trait::feed(&mut data, &mut row);
     }
 
     data
-  }
-
-  pub fn get_flowers(&self, limit: i32) -> Flowers {
-    let flower_desc: Vec<FlowerDesc> = self
-      .pool
-      .prep_exec(
-        "SELECT nom_avec_auteur, genre FROM descriptions LIMIT :limit;",
-        params! {
-            "limit" => limit,
-        },
-      )
-      .map(|result| {
-        result
-          .map(|x| x.unwrap())
-          .map(|row| {
-            let (id, name) = mysql::from_row(row);
-            FlowerDesc { id: id, name: name }
-          })
-          .collect() // Collect payments so now `QueryResult` is mapped to `Vec<Payment>`
-      })
-      .unwrap(); // Unwrap `Vec<Payment>`
-
-
-    Flowers {
-      descrptions: flower_desc,
-    }
   }
 }
 
