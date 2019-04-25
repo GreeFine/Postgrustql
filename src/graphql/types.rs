@@ -1,6 +1,16 @@
 use super::super::database::ETables;
+use super::context::Context;
+use juniper::FieldResult;
 
-#[derive(Default)]
+pub trait RequestableObjects {
+  fn field_names() -> &'static [&'static str];
+  fn table() -> ETables;
+  fn row(_row: &mut mysql::Row) -> Box<Self> {
+    unimplemented!()
+  }
+}
+
+#[derive(Default, Debug)]
 pub struct Connection<T>
 where
   T: juniper::GraphQLType,
@@ -17,68 +27,76 @@ pub trait ConnectionTrait {
   }
 }
 
-impl<T> ConnectionTrait for Connection<T>
-where
-  T: ConnectionTrait,
-  T: juniper::GraphQLType,
-{
+impl <T> ConnectionTrait for Connection<T>
+where T: juniper::GraphQLType,
+      T: RequestableObjects,
+      T: Default {
   fn feed(&mut self, row: &mut mysql::Row) -> &mut Self {
-    self.nodes.push(*T::create(row));
+    self.nodes.push(*T::row(row));
     self
   }
 }
 
-pub trait RequestableObjects {
-  fn table(&self) -> ETables;
-  fn field_names(&self) -> &'static [&'static str];
-}
-
 macro_rules! requestable_objects {
-    ($conname:ident $table:ident struct $name:ident { $($fname:ident : $ftype:ty),* }) => {
-        #[derive(juniper::GraphQLObject, Debug, Default)]
+    ($table:ident struct $name:ident { $($fname:ident : $ftype:ty),* } ) => {
+        #[derive(Default, Debug)]
         pub struct $name {
             $($fname : $ftype),*
         }
 
-        impl ConnectionTrait for $name {
-          fn create(row: &mut mysql::Row) -> Box<Self> {
-            let mut _self = Self::default();
-            _self.feed(row);
-            Box::new(_self)
-          }
-
-          #[allow(unused_assignments)]
-          fn feed(&mut self, row: &mut mysql::Row) -> &mut Self {
-            let mut index = 0;
-            $(
-              self.$fname = row.take(index).unwrap();
-              index+=1;
-            )*
-            self
-          }
-        }
-
-        pub type $conname = Connection<$name>;
-          juniper::graphql_object!($conname: () |&self| {
-          field nodes() -> &Vec<$name> {
-              &self.nodes
-          }
+        juniper::graphql_object!($name: Context |&self| {
+          $(
+            field $fname() -> &$ftype {
+                &self.$fname
+            }
+          ),*
         });
 
-        impl RequestableObjects for $conname {
-            fn field_names(&self) -> &'static [&'static str] {
+        #[allow(unused_assignments)]
+        impl RequestableObjects for $name {
+            fn field_names() -> &'static [&'static str] {
                 static NAMES: &'static [&'static str] = &[$(stringify!($fname)),*];
                 NAMES
             }
-            fn table(&self) -> ETables {
+            fn table() -> ETables {
               ETables::$table
+            }
+            fn row(row: &mut mysql::Row) -> Box<Self> {
+              let mut obj_row = $name::default();
+              let mut index = 0;
+              $(
+                obj_row.$fname = row.take(index).unwrap();
+                index += 1;
+              )*
+              Box::new(obj_row)
             }
         }
     }
 }
 
+
+macro_rules! objects_connection {
+  ($conname:ident, $name:ident) => {
+    pub type $conname = Connection<$name>;
+    impl RequestableObjects for $conname
+    where $name: RequestableObjects {
+        fn field_names() -> &'static [&'static str] {
+            $name::field_names()
+        }
+        fn table() -> ETables {
+          $name::table()
+        }
+    }
+
+    juniper::graphql_object!($conname: Context |&self| {
+      field nodes() -> &Vec<$name> {
+          &self.nodes
+      }
+    });
+  }
+}
+
 requestable_objects! {
-  PictureConnection
   pictures
   struct Picture {
     binaire_href: String,
@@ -87,9 +105,10 @@ requestable_objects! {
     pays: String
   }
 }
+objects_connection!(PictureConnection, Picture);
+
 
 requestable_objects! {
-  DescriptionConnection
   descriptions
   struct Description {
     nom_avec_auteur: String,
@@ -98,3 +117,22 @@ requestable_objects! {
     nom_commercial: String
   }
 }
+objects_connection!(DescriptionConnection, Description);
+
+
+#[derive(Debug, Default)]
+pub struct User {
+  a: DescriptionConnection,
+  b: PictureConnection,
+}
+
+juniper::graphql_object!(User: Context |&self| {
+  field b(&executor, limit: Option<i32>) -> FieldResult<PictureConnection> {
+    let db = &executor.context().database;
+    db.request_objects(limit)
+  }
+  field a(&executor, limit: Option<i32>) -> FieldResult<DescriptionConnection> {
+    let db = &executor.context().database;
+    db.request_objects(limit)
+  }
+});
