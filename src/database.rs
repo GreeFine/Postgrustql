@@ -1,6 +1,5 @@
-use super::graphql::types::{Connection_trait, requestable_objects_trait};
+use super::graphql::types::{RequestableObjects, ConnectionTrait};
 use juniper::GraphQLType;
-use mysql::prelude::*;
 use mysql::OptsBuilder;
 
 pub struct Database {
@@ -9,6 +8,7 @@ pub struct Database {
 
 
 #[derive(AsRefStr)]
+#[allow(non_camel_case_types)]
 pub enum ETables {
   pictures,
   descriptions,
@@ -29,10 +29,10 @@ impl Database {
 
   pub fn request<T>(&self, table: ETables, limit: Option<i32>) -> T
   where
-    T: Connection_trait,
+    T: ConnectionTrait,
     T: GraphQLType,
     T: Default,
-    T: requestable_objects_trait
+    T: RequestableObjects,
   {
     let mut request = String::new();
     let mut data = T::default();
@@ -54,7 +54,7 @@ impl Database {
       .map(|result| result.map(|x| x.unwrap()))
       .unwrap();
     for mut row in rows {
-      Connection_trait::feed(&mut data, &mut row);
+      ConnectionTrait::feed(&mut data, &mut row);
     }
 
     data

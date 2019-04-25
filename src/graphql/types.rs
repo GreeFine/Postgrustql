@@ -1,5 +1,4 @@
 use super::super::database::ETables;
-use juniper::GraphQLType;
 
 #[derive(Default)]
 pub struct Connection<T>
@@ -9,7 +8,7 @@ where
   pub nodes: Vec<T>,
 }
 
-pub trait Connection_trait {
+pub trait ConnectionTrait {
   fn feed(&mut self, _: &mut mysql::Row) -> &mut Self {
     unimplemented!()
   }
@@ -18,9 +17,9 @@ pub trait Connection_trait {
   }
 }
 
-impl<T> Connection_trait for Connection<T>
+impl<T> ConnectionTrait for Connection<T>
 where
-  T: Connection_trait,
+  T: ConnectionTrait,
   T: juniper::GraphQLType,
 {
   fn feed(&mut self, row: &mut mysql::Row) -> &mut Self {
@@ -29,24 +28,26 @@ where
   }
 }
 
-pub trait requestable_objects_trait {
+pub trait RequestableObjects {
+  fn table(&self) -> ETables;
   fn field_names(&self) -> &'static [&'static str];
 }
 
 macro_rules! requestable_objects {
-    ($conname:ident struct $name:ident { $($fname:ident : $ftype:ty),* }) => {
+    ($conname:ident $table:ident struct $name:ident { $($fname:ident : $ftype:ty),* }) => {
         #[derive(juniper::GraphQLObject, Debug, Default)]
         pub struct $name {
             $($fname : $ftype),*
         }
 
-        impl Connection_trait for $name {
+        impl ConnectionTrait for $name {
           fn create(row: &mut mysql::Row) -> Box<Self> {
             let mut _self = Self::default();
             _self.feed(row);
             Box::new(_self)
           }
 
+          #[allow(unused_assignments)]
           fn feed(&mut self, row: &mut mysql::Row) -> &mut Self {
             let mut index = 0;
             $(
@@ -64,10 +65,13 @@ macro_rules! requestable_objects {
           }
         });
 
-        impl requestable_objects_trait for $conname {
+        impl RequestableObjects for $conname {
             fn field_names(&self) -> &'static [&'static str] {
                 static NAMES: &'static [&'static str] = &[$(stringify!($fname)),*];
                 NAMES
+            }
+            fn table(&self) -> ETables {
+              ETables::$table
             }
         }
     }
@@ -75,6 +79,7 @@ macro_rules! requestable_objects {
 
 requestable_objects! {
   PictureConnection
+  pictures
   struct Picture {
     binaire_href: String,
     determination_ns: String,
@@ -85,6 +90,7 @@ requestable_objects! {
 
 requestable_objects! {
   DescriptionConnection
+  descriptions
   struct Description {
     nom_avec_auteur: String,
     num_taxonomique: String,

@@ -1,8 +1,7 @@
 
 use super::super::database::ETables;
 use super::context::Context;
-use super::types::{PictureConnection, DescriptionConnection};
-use super::types::*;
+use super::types::{DescriptionConnection, PictureConnection};
 use juniper::FieldResult;
 pub struct Query;
 

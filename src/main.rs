@@ -3,7 +3,6 @@ extern crate juniper;
 extern crate juniper_rocket;
 #[macro_use]
 extern crate rocket;
-#[macro_use]
 extern crate mysql;
 extern crate tokio;
 #[macro_use]
