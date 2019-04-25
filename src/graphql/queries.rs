@@ -1,7 +1,7 @@
 
 use super::super::database::ETables;
 use super::context::Context;
-use super::types::PictureConnection;
+use super::types::{PictureConnection, DescriptionConnection};
 use super::types::*;
 use juniper::FieldResult;
 pub struct Query;
@@ -16,8 +16,15 @@ impl Query {
         field pictures(&executor, limit: Option<i32>) -> FieldResult<PictureConnection> {
           let db = &executor.context().database;
           Ok(db.request::<PictureConnection>(
-            vec!["binaire_href", "determination_ns"],
             ETables::pictures,
+            limit,
+          ))
+        }
+
+        field descriptions(&executor, limit: Option<i32>) -> FieldResult<DescriptionConnection> {
+          let db = &executor.context().database;
+          Ok(db.request::<DescriptionConnection>(
+            ETables::descriptions,
             limit,
           ))
         }
