@@ -1,12 +1,12 @@
-use super::super::database::Database;
+use super::super::database::DbConnection;
 
 pub struct Context {
-  pub database: Database
+  pub database: DbConnection
     // Use your real database pool here.
 }
 impl Context {
   pub fn new() -> Context {
-    Context { database: Database::new()}
+    Context { database: DbConnection::pool_connect()}
   }
 }
 

@@ -1,9 +1,11 @@
-#![feature(decl_macro, proc_macro_hygiene)]
-extern crate juniper;
-extern crate juniper_rocket;
+#![feature(decl_macro, proc_macro_hygiene, trace_macros)]
 #[macro_use]
 extern crate rocket;
-extern crate mysql;
+extern crate juniper;
+extern crate juniper_rocket;
+extern crate postgres;
+extern crate r2d2;
+extern crate r2d2_postgres;
 extern crate tokio;
 #[macro_use]
 extern crate strum_macros;
@@ -11,7 +13,6 @@ extern crate strum_macros;
 pub mod database;
 mod graphql;
 mod rocket_config;
-
 
 fn main() {
     rocket_config::run();

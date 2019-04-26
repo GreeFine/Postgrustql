@@ -16,7 +16,7 @@ impl Query {
           Ok(User::default())
         }
 
-        field description(&executor, limit: Option<i32>) -> FieldResult<Description> {
+        field description(&executor) -> FieldResult<Description> {
           let db = &executor.context().database;
           db.request_object()
         }

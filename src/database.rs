@@ -1,12 +1,8 @@
 use super::graphql::types::{ConnectionTrait, RequestableObjects};
 use juniper::FieldResult;
 use juniper::GraphQLType;
-use mysql::OptsBuilder;
-
-pub struct Database {
-  pool: mysql::Pool,
-}
-
+use r2d2::{Pool, PooledConnection};
+use r2d2_postgres::{PostgresConnectionManager, TlsMode};
 
 #[derive(AsRefStr)]
 #[allow(non_camel_case_types)]
@@ -15,17 +11,21 @@ pub enum ETables {
   descriptions,
 }
 
-impl Database {
+pub struct DbConnection(Pool<PostgresConnectionManager>);
 
-  pub fn new() -> Database {
-    let mut database = OptsBuilder::new();
-    database
-      .user(Some("greefine"))
-      .pass(Some("password"))
-      .db_name(Some("Flowers"));
-    Database {
-      pool: mysql::Pool::new(database).unwrap(),
-    }
+impl DbConnection {
+  pub fn pool_connect() -> DbConnection {
+    let manager = PostgresConnectionManager::new(
+      "postgres://greefine:password@localhost:5432/flowers",
+      TlsMode::None,
+    )
+    .unwrap();
+    let pool = r2d2::Pool::new(manager).unwrap();
+    Self(pool)
+  }
+
+  fn client(&self) -> PooledConnection<PostgresConnectionManager> {
+    self.0.get().unwrap()
   }
 
   pub fn request_objects<T>(&self, limit: Option<i32>) -> FieldResult<T>
@@ -51,11 +51,7 @@ impl Database {
     }
 
     println!("SQL CONNECTION: {0}", request);
-    let rows = self
-      .pool
-      .prep_exec(request, ())
-      .map(|result| result.map(|x| x.unwrap()))
-      .unwrap();
+    let rows = &self.client().query(&request, &[]).unwrap();
     for mut row in rows {
       data.feed(&mut row);
     }
@@ -82,11 +78,7 @@ impl Database {
     request = format!("SELECT {0} FROM {1} LIMIT 1;", request, table.as_ref());
 
     println!("SQL OBJECT: {0}", request);
-    let rows = self
-      .pool
-      .prep_exec(request, ())
-      .map(|result| result.map(|x| x.unwrap()))
-      .unwrap();
+    let rows = &self.client().query(&request, &[]).unwrap();
     let mut obj = T::default();
     for mut row in rows {
       obj = *T::row(&mut row);

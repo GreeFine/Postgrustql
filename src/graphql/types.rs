@@ -1,11 +1,12 @@
 use super::super::database::ETables;
 use super::context::Context;
 use juniper::FieldResult;
+use postgres::rows::Row;
 
 pub trait RequestableObjects {
   fn field_names() -> &'static [&'static str];
   fn table() -> ETables;
-  fn row(_row: &mut mysql::Row) -> Box<Self> {
+  fn row(_row: &mut Row) -> Box<Self> {
     unimplemented!()
   }
 }
@@ -19,19 +20,21 @@ where
 }
 
 pub trait ConnectionTrait {
-  fn feed(&mut self, _: &mut mysql::Row) -> &mut Self {
+  fn feed(&mut self, _: &mut Row) -> &mut Self {
     unimplemented!()
   }
-  fn create(_: &mut mysql::Row) -> Box<Self> {
+  fn create(_: &mut Row) -> Box<Self> {
     unimplemented!()
   }
 }
 
-impl <T> ConnectionTrait for Connection<T>
-where T: juniper::GraphQLType,
-      T: RequestableObjects,
-      T: Default {
-  fn feed(&mut self, row: &mut mysql::Row) -> &mut Self {
+impl<T> ConnectionTrait for Connection<T>
+where
+  T: juniper::GraphQLType,
+  T: RequestableObjects,
+  T: Default,
+{
+  fn feed(&mut self, row: &mut Row) -> &mut Self {
     self.nodes.push(*T::row(row));
     self
   }
@@ -61,11 +64,11 @@ macro_rules! requestable_objects {
             fn table() -> ETables {
               ETables::$table
             }
-            fn row(row: &mut mysql::Row) -> Box<Self> {
+            fn row(row: &mut Row) -> Box<Self> {
               let mut obj_row = $name::default();
               let mut index = 0;
               $(
-                obj_row.$fname = row.take(index).unwrap();
+                obj_row.$fname = row.get(index);
                 index += 1;
               )*
               Box::new(obj_row)
@@ -118,7 +121,6 @@ requestable_objects! {
   }
 }
 objects_connection!(DescriptionConnection, Description);
-
 
 #[derive(Debug, Default)]
 pub struct User {
