@@ -28,7 +28,6 @@ fn post_graphql_handler(
 }
 
 pub fn run() {
-    Query::init();
     rocket::ignite()
         .manage(Context::new())
         .manage(Schema::new(Query, EmptyMutation::<Context>::new()))

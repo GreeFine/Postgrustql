@@ -1,4 +1,4 @@
-use super::graphql::types::{ConnectionTrait, RequestableObjects};
+use super::graphql::types::{ConnectionTrait, RequestableObject, Connection};
 use juniper::FieldResult;
 use juniper::GraphQLType;
 use r2d2::{Pool, PooledConnection};
@@ -28,12 +28,12 @@ impl DbConnection {
     self.0.get().unwrap()
   }
 
-  pub fn request_objects<T>(&self, limit: Option<i32>) -> FieldResult<T>
+  pub fn request_objects<T,X>(&self, limit: Option<i32>) -> FieldResult<T>
   where
     T: GraphQLType,
     T: Default,
-    T: RequestableObjects,
-    T: ConnectionTrait,
+    X: RequestableObject,
+    T: ConnectionTrait<T,X>,
   {
     let mut request = String::new();
     let mut data = T::default();
@@ -63,7 +63,7 @@ impl DbConnection {
   where
     T: GraphQLType,
     T: Default,
-    T: RequestableObjects,
+    T: RequestableObject,
   {
     //FIXME: What if this is a multi result
     let mut request = String::new();
