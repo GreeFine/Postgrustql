@@ -1,10 +1,10 @@
-use super::super::database::ETables;
 use super::context::Context;
 use postgres::rows::Row;
+use requestable::{objects_connection, requestable_object};
 
 pub trait RequestableObject {
   fn field_names() -> &'static [&'static str];
-  fn table() -> ETables;
+  fn table() -> &'static str;
   fn row(_row: &mut Row) -> Box<Self> {
     unimplemented!()
   }
@@ -29,7 +29,7 @@ where
   fn field_names() -> &'static [&'static str] {
     X::field_names()
   }
-  fn table() -> ETables {
+  fn table() -> &'static str {
     X::table()
   }
 }
@@ -48,82 +48,33 @@ where
   }
 }
 
-macro_rules! requestable_objects {
-    ($table:ident struct $name:ident { $($fname:ident : $ftype:ty),* } ) => {
-        #[derive(Default, Debug)]
-        pub struct $name {
-            $($fname : $ftype),*
-        }
-
-        juniper::graphql_object!($name: Context |&self| {
-          $(
-            field $fname() -> &$ftype {
-                &self.$fname
-            }
-          )*
-        });
-
-        #[allow(unused_assignments)]
-        impl RequestableObject for $name {
-            fn field_names() -> &'static [&'static str] {
-                static NAMES: &'static [&'static str] = &[$(stringify!($fname)),*];
-                NAMES
-            }
-            fn table() -> ETables {
-              ETables::$table
-            }
-            fn row(row: &mut Row) -> Box<Self> {
-              let mut obj_row = $name::default();
-              let mut index = 0;
-              $(
-                obj_row.$fname = row.get(index);
-                index += 1;
-              )*
-              Box::new(obj_row)
-            }
-        }
-    }
-}
-
-
-macro_rules! objects_connection {
-  ($conname:ident, $name:ident) => {
-    pub type $conname = Connection<$name>;
-
-    juniper::graphql_object!($conname: Context |&self| {
-      field nodes() -> &Vec<$name> {
-          &self.nodes
-      }
-    });
-  }
-}
-
-requestable_objects! {
-  pictures
-  struct Picture {
+requestable_object! {
+  "pictures"
+  pub struct Picture {
     binaire_href: String,
     determination_ns: String,
     lieudit: String,
     pays: String
   }
 }
-objects_connection!(PictureConnection, Picture);
+objects_connection!(Picture);
 
 
-requestable_objects! {
-  descriptions
-  struct Description {
+requestable_object! {
+  "descriptions"
+  pub struct Description {
     nom_avec_auteur: String,
     num_taxonomique: String,
     annee_et_bibliographie: String,
     nom_commercial: String
+    // desc: Picture
   }
 }
 
-objects_connection!(DescriptionConnection, Description);
+objects_connection!(Description);
 
 #[derive(Debug, Default)]
 pub struct User {
-  a: DescriptionConnection,
-  b: PictureConnection,
+  a: ConnectionDescription,
+  b: ConnectionPicture,
 }

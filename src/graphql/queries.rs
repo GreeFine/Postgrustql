@@ -1,17 +1,17 @@
 
 use super::context::Context;
-use super::types::{Description, DescriptionConnection, PictureConnection, User};
+use super::types::{Description, ConnectionDescription, ConnectionPicture, User};
 use juniper::FieldResult;
 
 pub struct Query;
 
 
 juniper::graphql_object!(User: Context |&self| {
-  field b(&executor, limit: Option<i32>) -> FieldResult<PictureConnection> {
+  field b(&executor, limit: Option<i32>) -> FieldResult<ConnectionPicture> {
     let db = &executor.context().database;
     db.request_objects(limit)
   }
-  field a(&executor, limit: Option<i32>) -> FieldResult<DescriptionConnection> {
+  field a(&executor, limit: Option<i32>) -> FieldResult<ConnectionDescription> {
     let db = &executor.context().database;
     db.request_objects(limit)
   }
@@ -31,12 +31,12 @@ juniper::graphql_object!(Query: Context |&self| {
       db.request_object()
     }
 
-    field pictures(&executor, limit: Option<i32>) -> FieldResult<PictureConnection> {
+    field pictures(&executor, limit: Option<i32>) -> FieldResult<ConnectionPicture> {
       let db = &executor.context().database;
       db.request_objects(limit)
     }
 
-    field descriptions(&executor, limit: Option<i32>) -> FieldResult<DescriptionConnection> {
+    field descriptions(&executor, limit: Option<i32>) -> FieldResult<ConnectionDescription> {
       let db = &executor.context().database;
       db.request_objects(limit)
     }

@@ -7,10 +7,8 @@ extern crate postgres;
 extern crate r2d2;
 extern crate r2d2_postgres;
 extern crate tokio;
-#[macro_use]
-extern crate strum_macros;
 
-pub mod database;
+mod database;
 mod graphql;
 mod rocket_config;
 

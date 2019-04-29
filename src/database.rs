@@ -1,15 +1,8 @@
-use super::graphql::types::{ConnectionTrait, RequestableObject, Connection};
+use super::graphql::types::{ConnectionTrait, RequestableObject};
 use juniper::FieldResult;
 use juniper::GraphQLType;
 use r2d2::{Pool, PooledConnection};
 use r2d2_postgres::{PostgresConnectionManager, TlsMode};
-
-#[derive(AsRefStr)]
-#[allow(non_camel_case_types)]
-pub enum ETables {
-  pictures,
-  descriptions,
-}
 
 pub struct DbConnection(Pool<PostgresConnectionManager>);
 
@@ -28,12 +21,12 @@ impl DbConnection {
     self.0.get().unwrap()
   }
 
-  pub fn request_objects<T,X>(&self, limit: Option<i32>) -> FieldResult<T>
+  pub fn request_objects<T, X>(&self, limit: Option<i32>) -> FieldResult<T>
   where
     T: GraphQLType,
     T: Default,
     X: RequestableObject,
-    T: ConnectionTrait<T,X>,
+    T: ConnectionTrait<T, X>,
   {
     let mut request = String::new();
     let mut data = T::default();
@@ -46,8 +39,8 @@ impl DbConnection {
     }
     request.truncate(request.len() - 2);
     match limit {
-      None => request = format!("SELECT {0} FROM {1};", request, table.as_ref()),
-      Some(x) => request = format!("SELECT {0} FROM {1} LIMIT {2};", request, table.as_ref(), x),
+      None => request = format!("SELECT {0} FROM {1};", request, table),
+      Some(x) => request = format!("SELECT {0} FROM {1} LIMIT {2};", request, table, x),
     }
 
     println!("SQL CONNECTION: {0}", request);
@@ -75,7 +68,7 @@ impl DbConnection {
       request.push_str(", ");
     }
     request.truncate(request.len() - 2);
-    request = format!("SELECT {0} FROM {1} LIMIT 1;", request, table.as_ref());
+    request = format!("SELECT {0} FROM {1} LIMIT 1;", request, table);
 
     println!("SQL OBJECT: {0}", request);
     let rows = &self.client().query(&request, &[]).unwrap();
