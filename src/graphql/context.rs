@@ -1,13 +1,13 @@
-use super::super::database::DbConnection;
+use super::super::database::functions::DbLink;
 
 pub struct Context {
-  pub database: DbConnection, // Use your real database pool here.
+  pub db_link: DbLink, // Use your real database pool here.
 }
 
 impl Context {
   pub fn new() -> Context {
     Context {
-      database: DbConnection::pool_connect(),
+      db_link: DbLink::pool_create(),
     }
   }
 }

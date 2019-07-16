@@ -3,9 +3,9 @@
 extern crate rocket;
 extern crate juniper;
 extern crate juniper_rocket;
-extern crate postgres;
-extern crate r2d2;
-extern crate r2d2_postgres;
+#[macro_use]
+extern crate diesel;
+extern crate dotenv;
 extern crate tokio;
 extern crate uuid;
 

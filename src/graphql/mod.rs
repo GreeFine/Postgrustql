@@ -1,4 +1,3 @@
+pub mod context;
 pub mod queries;
 pub mod schema;
-pub mod types;
-pub mod context;

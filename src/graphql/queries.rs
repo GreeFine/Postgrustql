@@ -1,24 +1,10 @@
-
+use super::super::database::models::*;
+use super::super::database::schema::users::dsl::*;
 use super::context::Context;
-use super::types::{ConnectionDescription, ConnectionPicture, Description, User, UID};
+use diesel::prelude::*;
 use juniper::FieldResult;
 
 pub struct Query;
-
-
-juniper::graphql_object!(User: Context |&self| {
-  field b(&executor, limit: Option<i32>) -> FieldResult<ConnectionPicture> {
-    let db = &executor.context().database;
-    db.request_objects(limit)
-  }
-  field a(&executor, limit: Option<i32>) -> FieldResult<ConnectionDescription> {
-    let db = &executor.context().database;
-    db.request_objects(limit)
-  }
-  field c(&executor, limit: Option<i32>) -> FieldResult<UID> {
-    Ok(UID::default())
-  }
-});
 
 juniper::graphql_object!(Query: Context |&self| {
     field apiVersion() -> &str {
@@ -26,21 +12,13 @@ juniper::graphql_object!(Query: Context |&self| {
     }
 
     field user(&executor, limit: Option<i32>) -> FieldResult<User> {
-      Ok(User::default())
-    }
+      let conn = &executor.context().db_link.connection();
+      let results = users
+          .limit(1)
+          .load::<User>(conn)
+          .expect("Error loading users");
 
-    field description(&executor) -> FieldResult<Description> {
-      let db = &executor.context().database;
-      db.request_object()
-    }
-
-    field pictures(&executor, limit: Option<i32>) -> FieldResult<ConnectionPicture> {
-      let db = &executor.context().database;
-      db.request_objects(limit)
-    }
-
-    field descriptions(&executor, limit: Option<i32>) -> FieldResult<ConnectionDescription> {
-      let db = &executor.context().database;
-      db.request_objects(limit)
+      let res = results[0].clone();
+      Ok(res)
     }
 });
