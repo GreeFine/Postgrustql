@@ -9,7 +9,7 @@ pub struct DbConnection(Pool<PostgresConnectionManager>);
 impl DbConnection {
   pub fn pool_connect() -> DbConnection {
     let manager = PostgresConnectionManager::new(
-      "postgres://greefine:password@localhost:5432/flowers",
+      "postgres://greefine:password@localhost:5432/rednit",
       TlsMode::None,
     )
     .unwrap();

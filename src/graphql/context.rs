@@ -3,6 +3,7 @@ use super::super::database::DbConnection;
 pub struct Context {
   pub database: DbConnection, // Use your real database pool here.
 }
+
 impl Context {
   pub fn new() -> Context {
     Context {

@@ -7,6 +7,7 @@ extern crate postgres;
 extern crate r2d2;
 extern crate r2d2_postgres;
 extern crate tokio;
+extern crate uuid;
 
 mod database;
 mod graphql;

@@ -1,6 +1,6 @@
 
 use super::context::Context;
-use super::types::{Description, ConnectionDescription, ConnectionPicture, User};
+use super::types::{ConnectionDescription, ConnectionPicture, Description, User, UID};
 use juniper::FieldResult;
 
 pub struct Query;
@@ -14,6 +14,9 @@ juniper::graphql_object!(User: Context |&self| {
   field a(&executor, limit: Option<i32>) -> FieldResult<ConnectionDescription> {
     let db = &executor.context().database;
     db.request_objects(limit)
+  }
+  field c(&executor, limit: Option<i32>) -> FieldResult<UID> {
+    Ok(UID::default())
   }
 });
 

@@ -77,6 +77,7 @@ pub fn requestable_object(input: TokenStream) -> TokenStream {
       fn table() -> &'static str {
         #table
       }
+
       fn row(row: &mut Row) -> Box<Self> {
         let mut obj_row = #name::default();
         let mut index = 0;
