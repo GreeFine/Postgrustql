@@ -11,7 +11,7 @@ serde_derive = "1.0"
 juniper = "0.12"
 juniper_rocket = "0.3"
 rocket ="0.4"
-tokio = "0.1"
+tokio = "1.8"
 lazy_static = "1.3"
 postgres = { features = ["with-uuid"], version= "0.15.2"}
 uuid = "0.7"
